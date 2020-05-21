@@ -6,12 +6,13 @@ RUN \
   echo "**** install bash runtime packages ****" \
   && apk-install \
     bash \
-#    coreutils \
+    ca-certificates \
+    coreutils \
     curl \
-#    file \
+    file \
     graphicsmagick \
     inotify-tools \
-    netcat \
+    netcat-openbsd \
     stat
 
 # add local files
