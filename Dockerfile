@@ -12,8 +12,7 @@ RUN \
     file \
     graphicsmagick \
     inotify-tools \
-    netcat-openbsd \
-    stat
+    netcat-openbsd
 
 # add local files
 COPY rootfs/ /
