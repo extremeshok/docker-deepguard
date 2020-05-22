@@ -35,6 +35,8 @@ DIR_BACKUP="${DIR_BACKUP:-/data/backup}"
 BACKUP_ORIGINAL="${BACKUP_ORIGINAL:-yes}"
 SAVE_OUTPUT="${SAVE_OUTPUT:-yes}"
 EMPTY_INPUT_DIR_ON_START="${EMPTY_INPUT_DIR_ON_START:-no}"
+PROCESS_BACKLOG="${PROCESS_BACKLOG:-no}"
+
 DRAW_RESULTS="${DRAW_RESULTS:-yes}"
 
 DEBUG="${DEBUG:-yes}"
@@ -203,12 +205,12 @@ function process_image { #image_in #image_out
 
   if [ -f "$image_in" ] ; then
     test "$BE_VERBOSE" == "1" && echo "Processing image: $image_in"
-    #result="$(curl --retry 1 --retry-connrefused 1 --retry-max-time 30 --retry-delay 1 --fail-early --insecure --silent -X "POST" -F "image=@${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
+    #result="$(curl --retry 1 --retry-connrefused 1 --retry-max-time 10 --retry-delay 1 --fail-early --insecure --silent -X "POST" -F "image=@${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
     result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
     res=$?
     if [ "$res" != 0 ] ; then
       test "$BE_VERBOSE" == "1" && echo "Retrying with deepstack backup"
-      #result="$(curl --retry 1 --retry-connrefused 1 --retry-max-time 30 --retry-delay 1 --fail-early --insecure --silent -X "POST" -F "image=@${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
+      #result="$(curl --retry 1 --retry-connrefused 1 --retry-max-time 10 --retry-delay 1 --fail-early --insecure --silent -X "POST" -F "image=@${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
       result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
       res=$?
     fi
@@ -478,6 +480,21 @@ if [ "${BACKUP_ORIGINAL}" == "1" ] ; then
   mkdir -p "$DIR_BACKUP"
 fi
 mkdir -p "$DIR_OUTPUT"
+
+if [ "${PROCESS_BACKLOG,,}" == "yes" ] || [ "${PROCESS_BACKLOG,,}" == "true" ] || [ "${PROCESS_BACKLOG,,}" == "1" ] ; then
+  echo "Processing Backlog: ${DIR_INPUT}"
+  while IFS= read -r -d $'\0' filepath; do
+    filename="${filepath//*\/}"
+    extension="${filename//*.}"
+    test "$DEBUG" == "1" && echo "${filepath} : $extension"
+    #shellcheck disable=SC2076
+    if [[ "$VALID_IMAGE_EXTENSION_LIST" =~ ",${extension,,}," ]] ; then
+      test "$DEBUG" == "1" && echo "valid image extension detected...."
+      process_image "${filepath}" "$DIR_OUTPUT/${filename}"
+    fi
+    test "$DEBUG" == "1" && echo "====>${RUN_COUNT} | AC ${ALERT_COUNT} @ ${ALERT_LAST}"
+  done < <(find "${DIR_INPUT}" -maxdepth 1 -type f -print0)
+fi
 
 echo "Watching: ${DIR_INPUT}"
 inotifywait -m -e close_write,moved_to --exclude ".*(\.git|\.private|pr ivate|html|public_html|www|db|dbinfo|log|logs|sql|backup|backups|conf|config|configs)/" "${DIR_INPUT}" |

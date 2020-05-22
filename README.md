@@ -30,6 +30,7 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 * BACKUP_ORIGINAL="yes"
 * SAVE_OUTPUT="yes"
 * EMPTY_INPUT_DIR_ON_START="no"
+* PROCESS_BACKLOG="no"
 * DRAW_RESULTS="yes"
 * DEBUG="no"
 * IGNORE_NONE="no"
