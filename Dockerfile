@@ -1,24 +1,26 @@
-FROM extremeshok/baseimage-alpine:latest AS BUILD
+FROM extremeshok/baseimage-ubuntu:latest AS BUILD
 
 LABEL mantainer="Adrian Kriel <admin@extremeshok.com>" vendor="eXtremeSHOK.com"
 
-RUN \
-  echo "**** install bash runtime packages ****" \
-  && apk-install \
+RUN echo "**** install bash runtime packages ****" \
+  && apt-install \
     bash \
     ca-certificates \
-    coreutils \
     curl \
     file \
     graphicsmagick \
     inotify-tools \
-    netcat-openbsd
+    netcat
 
 # add local files
 COPY rootfs/ /
 
-RUN \
-  echo "**** configure ****" \
+RUN echo "**** create dirs ****" \
+  && mkdir -p /data/input \
+  && mkdir -p /data/output \
+  && mkdir -p /data/backup
+
+RUN echo "**** configure ****" \
   && chmod 777 /xshok-deepguard.sh
 
 WORKDIR /data
