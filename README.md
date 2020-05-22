@@ -18,7 +18,7 @@ notifications are always sent, even when alerts are disabled, ie max alerts have
 notify is done before the alerts are sent
 when debug mode is disabled, alerts and notifications are done in parallel (separate threads)
 
-# ENVIRONMENT VARIBLES
+# ENVIRONMENT VARIABLES
 ### DEFAULTS
 * IGNORE_LIST="person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, trafficlight, firehydrant, stop_sign, parkingmeter, bench, bird, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard, sportsball, kite, baseballbat, baseballglove, skateboard, surfboard, tennisracket, bottle, wineglass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange, broccoli, carrot, hotdog, pizza, donot, cake, chair, couch, pottedplant, bed, diningtable, toilet, tv, laptop, mouse, remote, keyboard, cellphone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddybear, hairdryer, toothbrush"
 * NOTIFY_LIST="person, cat"
@@ -32,13 +32,14 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 * EMPTY_INPUT_DIR_ON_START="no"
 * DRAW_RESULTS="yes"
 * DEBUG="no"
+* IGNORE_NONE="no"
 * BE_VERBOSE="yes"
 * ALERT_MAX_ALERTS="2"
 * ALERT_PERIOD_SECONDS="120"
 
 ## OPTIONS
 * DEEPSTACK_URL="http://deepstack:5000"
-* DEEPSTACK_BACKUP_URL="http://deepstackbak:5000"
+* DEEPSTACK_BACKUP_URL="http://deepstackbak:5000"MQTT_NOTIFY_MESSAGE
 * DEEPSTACK_CONFIDENCE_LIMIT="5"
 
 ### NOTIFY : zoneminder
@@ -70,20 +71,20 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 * TELEGRAM_TOKEN=""
 * TELEGRAM_CHAT_ID=""
 
-## ALERT : whatsmate (whatsapp)
+### ALERT : whatsmate (whatsapp)
 * ALERT_WHATSMATE="no"
 * WHATSMATE_CLIENT_ID=""
 * WHATSMATE_CLIENT_SECRET=""
 * WHATSMATE_WHATSAPP_NUMBER=""
 
-## ALERT : nexmo (sms/text)
+### ALERT : nexmo (sms/text)
 * ALERT_NEXMO="no"
 * NEXMO_API_KEY=""
 * NEXMO_API_SECRET=""
 * NEXMO_SMS_TO_NUMBER=""
 * NEXMO_SMS_FROM=""
 
-## ALERT : twilio (sms/text)
+### ALERT : twilio (sms/text)
 * ALERT_TWILIO="no"
 * TWILIO_ACCOUNT_SID=""
 * TWILIO_AUTH_TOKEN=""

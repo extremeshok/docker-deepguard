@@ -39,6 +39,7 @@ DRAW_RESULTS="${DRAW_RESULTS:-yes}"
 
 DEBUG="${DEBUG:-yes}"
 BE_VERBOSE="${BE_VERBOSE:-yes}"
+IGNORE_NONE="${IGNORE_NONE:-no}"
 
 ALERT_MAX_ALERTS="${ALERT_MAX_ALERTS:-2}"
 ALERT_PERIOD_SECONDS="${ALERT_PERIOD_SECONDS:-120}"
@@ -409,6 +410,9 @@ else
   else
     BE_VERBOSE="0"
   fi
+fi
+if [ "${IGNORE_NONE,,}" == "yes" ] || [ "${IGNORE_NONE,,}" == "true" ] || [ "${IGNORE_NONE,,}" == "1" ] ; then
+  IGNORE_LIST=""
 fi
 if [ "${SAVE_OUTPUT,,}" == "yes" ] || [ "${SAVE_OUTPUT,,}" == "true" ] || [ "${SAVE_OUTPUT,,}" == "1" ] ; then
   SAVE_OUTPUT="1"
