@@ -337,6 +337,10 @@ if [ "$(which nc 2> /dev/null)" == "" ] ; then
   echo "ERROR: nc binary not found, install netcat"
   exit 1
 fi
+if [ "$(which jq 2> /dev/null)" == "" ] ; then
+  echo "ERROR: jq binary not found"
+  exit 1
+fi
 if [ "$DIR_INPUT" == "" ] || [ "$DIR_INPUT" == "/" ] ; then
   echo "ERROR: DIR_INPUT is invalid"
   exit 1

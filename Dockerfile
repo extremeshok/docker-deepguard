@@ -10,6 +10,7 @@ RUN echo "**** install bash runtime packages ****" \
     file \
     graphicsmagick \
     inotify-tools \
+    jq \
     netcat
 
 # add local files
