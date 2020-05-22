@@ -57,6 +57,7 @@ URL_NOTIFY="${URL_NOTIFY:-http://blueiris/admin?trigger&camera=hd%%CAMERA%%&user
 
 NOTIFY_MQTT="${NOTIFY_MQTT:-no}"
 MQTT_NOTIFY_URL="${MQTT_NOTIFY_URL:-}"
+MQTT_NOTIFY_MESSAGE="${MQTT_NOTIFY_MESSAGE:-alert}"
 
 #ALERT
 ALERT_PUSHOVER="${ALERT_PUSHOVER:-no}"
@@ -114,7 +115,7 @@ function notify_url { #cameraname
 function notify_mqtt { #cameraname
   test "$BE_VERBOSE" == "1" && echo "Notify: mqtt"
   if [ "$MQTT_NOTIFY_URL" != "" ] && [[ "${MQTT_NOTIFY_URL,,}" == "mqtt"* ]] ; then
-    result="$(mosquitto_pub -L "${MQTT_NOTIFY_URL/\%\%CAMERA\%\%/$1}" -m "on" 2>&1)"
+    result="$(mosquitto_pub -L "${MQTT_NOTIFY_URL/\%\%CAMERA\%\%/$1}" -m "$MQTT_NOTIFY_MESSAGE" 2>&1)"
     test "$DEBUG" == "1" && echo "url @ ${cameraname}: ${result}"
   else
     echo "ERROR: MQTT_NOTIFY_URL is empty or missing mqtt/mqtts"

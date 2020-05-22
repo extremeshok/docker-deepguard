@@ -6,10 +6,9 @@ https://hub.docker.com/r/extremeshok/deepstack
 # Features
 * Latest ubuntu with S6
 * The power of Deepstack (machine learning / AI) to Guard your property
-* Notify: url, zoneminder, mqtt
+* Notify (Notifications/triggers) to: url (blueiris, etc), zoneminder, mqtt (mosquitto)
 * Alerts to: pushover, telegram, whatsmate(whatsapp), nexmo(sms), twilio(sms)
 * Limit alerts to prevent flooding, ie ALERT_MAX_ALERTS=2 in ALERT_PERIOD_SECONDS=120 (eg send a max of 2 alerts in 120seconds)
-* Notify (Notifications/triggers) to: curl, zoneminder port
 
 # Usage
 * View **docker-compose-sample.yml** in the source repository for usage
@@ -54,6 +53,7 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 ### NOTIFY : mqtt
 * NOTIFY_MQTT="no"
 * MQTT_NOTIFY_URL="mqtt://username:password@mqtthost:port/camera/%%CAMERA%%"
+* MQTT_NOTIFY_MESSAGE="alert"
 
 ### ALERT : pushover
 * ALERT_PUSHOVER="no"
