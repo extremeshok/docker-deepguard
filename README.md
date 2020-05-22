@@ -41,7 +41,7 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 ## OPTIONS
 * DEEPSTACK_URL="http://deepstack:5000"
 * DEEPSTACK_BACKUP_URL="http://deepstackbackup:5000"
-* DEEPSTACK_CONFIDENCE_LIMIT="55"
+* DEEPSTACK_CONFIDENCE_LIMIT="61"
 
 ### NOTIFY : zoneminder
 * NOTIFY_ZONEMINDER="no"
