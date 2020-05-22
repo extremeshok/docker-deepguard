@@ -21,7 +21,7 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 # ENVIRONMENT VARIBLES
 ### DEFAULTS
 * IGNORE_LIST="person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, trafficlight, firehydrant, stop_sign, parkingmeter, bench, bird, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard, sportsball, kite, baseballbat, baseballglove, skateboard, surfboard, tennisracket, bottle, wineglass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange, broccoli, carrot, hotdog, pizza, donot, cake, chair, couch, pottedplant, bed, diningtable, toilet, tv, laptop, mouse, remote, keyboard, cellphone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddybear, hairdryer, toothbrush"
-* NOTIFY_LIST="person, car, motorcycle, cat, bird, backpack, suitcase"
+* NOTIFY_LIST="person, car, motorcycle, backpack, suitcase"
 * VALID_IMAGE_EXTENSION_LIST="png, jpg, jpeg, gif, bmp"
 * CAMERA_NAME_DELIMINATOR="."
 * DIR_INPUT="/data/input"
