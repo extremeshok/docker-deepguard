@@ -28,11 +28,11 @@ VALID_IMAGE_EXTENSION_LIST="${VALID_IMAGE_EXTENSION_LIST:-png, jpg, jpeg, gif, b
 #CAMERA_NAME_DELIMINATOR="${CAMERA_NAME_DELIMINATOR:-_}"
 CAMERA_NAME_DELIMINATOR="${CAMERA_NAME_DELIMINATOR:-.}"
 
-DIR_INPUT="${DIR_INPUT:-/input}"
-DIR_OUTPUT="${DIR_OUTPUT:-/output}"
-DIR_ORIGINAL="${DIR_ORIGINAL:-/original}"
+DIR_INPUT="${DIR_INPUT:-/data/input}"
+DIR_OUTPUT="${DIR_OUTPUT:-/data/output}"
+DIR_BACKUP="${DIR_BACKUP:-/data/backup}"
 
-SAVE_ORIGINAL="${SAVE_ORIGINAL:-yes}"
+BACKUP_ORIGINAL="${BACKUP_ORIGINAL:-yes}"
 SAVE_OUTPUT="${SAVE_OUTPUT:-yes}"
 EMPTY_INPUT_DIR_ON_START="${EMPTY_INPUT_DIR_ON_START:-no}"
 DRAW_RESULTS="${DRAW_RESULTS:-yes}"
@@ -295,8 +295,8 @@ function process_image { #image_in #image_out
         fi
       fi
 
-      if [ "${SAVE_ORIGINAL}" == "1" ] ; then
-        mv -f "$image_in" "${DIR_ORIGINAL}/${image_in/*\//}"
+      if [ "${BACKUP_ORIGINAL}" == "1" ] ; then
+        mv -f "$image_in" "${DIR_BACKUP}/${image_in/*\//}"
       else
         rm -f "$image_in"
       fi
@@ -392,10 +392,10 @@ if [ "${SAVE_OUTPUT,,}" == "yes" ] || [ "${SAVE_OUTPUT,,}" == "true" ] || [ "${S
 else
   SAVE_OUTPUT="0"
 fi
-if [ "${SAVE_ORIGINAL,,}" == "yes" ] || [ "${SAVE_ORIGINAL,,}" == "true" ] || [ "${SAVE_ORIGINAL,,}" == "1" ] ; then
-  SAVE_ORIGINAL="1"
+if [ "${BACKUP_ORIGINAL,,}" == "yes" ] || [ "${BACKUP_ORIGINAL,,}" == "true" ] || [ "${BACKUP_ORIGINAL,,}" == "1" ] ; then
+  BACKUP_ORIGINAL="1"
 else
-  SAVE_ORIGINAL="0"
+  BACKUP_ORIGINAL="0"
 fi
 if [ "${ALERT_PUSHOVER,,}" == "yes" ] || [ "${ALERT_PUSHOVER,,}" == "true" ] || [ "${ALERT_PUSHOVER,,}" == "1" ] ; then
   ALERT_PUSHOVER="1"
@@ -442,8 +442,8 @@ fi
 if [ "${SAVE_OUTPUT}" != "1" ] ; then
   DIR_OUTPUT="/tmp/deepstack"
 fi
-if [ "${SAVE_ORIGINAL}" == "1" ] ; then
-  mkdir -p "$DIR_ORIGINAL"
+if [ "${BACKUP_ORIGINAL}" == "1" ] ; then
+  mkdir -p "$DIR_BACKUP"
 fi
 mkdir -p "$DIR_OUTPUT"
 

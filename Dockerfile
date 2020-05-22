@@ -21,6 +21,6 @@ RUN \
   echo "**** configure ****" \
   && chmod 777 /xshok-deepguard.sh
 
-WORKDIR /tmp
+WORKDIR /data
 
 ENTRYPOINT ["/init"]
