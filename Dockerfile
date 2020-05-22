@@ -9,6 +9,7 @@ RUN echo "**** install bash runtime packages ****" \
     curl \
     file \
     graphicsmagick \
+    gsfonts \
     inotify-tools \
     jq \
     netcat

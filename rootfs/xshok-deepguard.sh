@@ -20,7 +20,7 @@
 
 IGNORE_LIST="${IGNORE_LIST:-person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, trafficlight, firehydrant, stop_sign, parkingmeter, bench, bird, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard, sportsball, kite, baseballbat, baseballglove, skateboard, surfboard, tennisracket, bottle, wineglass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange, broccoli, carrot, hotdog, pizza, donot, cake, chair, couch, pottedplant, bed, diningtable, toilet, tv, laptop, mouse, remote, keyboard, cellphone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddybear, hairdryer, toothbrush}"
 
-NOTIFY_LIST="${NOTIFY_LIST:-person, car, motorcycle, cat, bird, backpack, suitcase}"
+NOTIFY_LIST="${NOTIFY_LIST:-person, cat}"
 
 VALID_IMAGE_EXTENSION_LIST="${VALID_IMAGE_EXTENSION_LIST:-png, jpg, jpeg, gif, bmp}"
 #requires graphicsmagick
@@ -48,15 +48,15 @@ DEEPSTACK_BACKUP_URL="${DEEPSTACK_BACKUP_URL:-http://deepstackbak:5000}"
 DEEPSTACK_CONFIDENCE_LIMIT="${DEEPSTACK_CONFIDENCE_LIMIT:-5}"
 
 #NOTIFY
-NOTIFY_ZONEMINDER="${DEBUG:-no}"
-ZONEMINDER_NOFITY_HOST="${DEBUG:-zoneminder}"
-ZONEMINDER_NOFITY_PORT="${DEBUG:-6802}"
+NOTIFY_ZONEMINDER="${NOTIFY_ZONEMINDER:-no}"
+ZONEMINDER_NOFITY_HOST="${ZONEMINDER_NOFITY_HOST:-zoneminder}"
+ZONEMINDER_NOFITY_PORT="${ZONEMINDER_NOFITY_PORT:-6802}"
 
-NOTIFY_URL="${DEBUG:-no}"
-URL_NOTIFY="${DEBUG:-http://blueiris/admin?trigger&camera=hd%%CAMERA%%&user=ai&pw=ai}"
+NOTIFY_URL="${NOTIFY_URL:-no}"
+URL_NOTIFY="${URL_NOTIFY:-http://blueiris/admin?trigger&camera=hd%%CAMERA%%&user=ai&pw=ai}"
 
 #ALERT
-ALERT_PUSHOVER="${ALERT_PUSHOVER:-yes}"
+ALERT_PUSHOVER="${ALERT_PUSHOVER:-no}"
 PUSHOVER_TOKEN="${PUSHOVER_TOKEN:-}"
 PUSHOVER_KEY="${PUSHOVER_KEY:-}"
 PUSHOVER_PRIORITY="${PUSHOVER_PRIORITY:-2}" #2=emergency
@@ -65,7 +65,7 @@ PUSHOVER_RETRY="${PUSHOVER_RETRY:-30}"
 PUSHOVER_DEVICE="${PUSHOVER_DEVICE:-}"
 PUSHOVER_SOUND="${PUSHOVER_SOUND:-siren}"
 
-ALERT_TELEGRAM="${ALERT_TELEGRAM:-yes}"
+ALERT_TELEGRAM="${ALERT_TELEGRAM:-no}"
 TELEGRAM_TOKEN="${TELEGRAM_TOKEN:-}"
 TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
 
@@ -74,7 +74,7 @@ WHATSMATE_CLIENT_ID="${WHATSMATE_CLIENT_ID:-}"
 WHATSMATE_CLIENT_SECRET="${WHATSMATE_CLIENT_SECRET:-}"
 WHATSMATE_WHATSAPP_NUMBER="${WHATSMATE_WHATSAPP_NUMBER:-}"
 
-ALERT_NEXMO="${ALERT_NEXMO:-yes}"
+ALERT_NEXMO="${ALERT_NEXMO:-no}"
 NEXMO_API_KEY="${NEXMO_API_KEY:-}"
 NEXMO_API_SECRET="${NEXMO_API_SECRET:-}"
 NEXMO_SMS_TO_NUMBER="${NEXMO_SMS_TO_NUMBER:-}"
