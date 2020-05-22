@@ -55,6 +55,9 @@ ZONEMINDER_NOFITY_PORT="${ZONEMINDER_NOFITY_PORT:-6802}"
 NOTIFY_URL="${NOTIFY_URL:-no}"
 URL_NOTIFY="${URL_NOTIFY:-http://blueiris/admin?trigger&camera=hd%%CAMERA%%&user=ai&pw=ai}"
 
+NOTIFY_MQTT="${NOTIFY_MQTT:-no}"
+MQTT_NOTIFY_URL="${MQTT_NOTIFY_URL:-}"
+
 #ALERT
 ALERT_PUSHOVER="${ALERT_PUSHOVER:-no}"
 PUSHOVER_TOKEN="${PUSHOVER_TOKEN:-}"
@@ -105,6 +108,16 @@ function notify_url { #cameraname
     test "$DEBUG" == "1" && echo "url @ ${cameraname}: ${result}"
   else
     echo "ERROR: URL_NOTIFY is empty or missing http/https"
+  fi
+}
+
+function notify_mqtt { #cameraname
+  test "$BE_VERBOSE" == "1" && echo "Notify: mqtt"
+  if [ "$MQTT_NOTIFY_URL" != "" ] && [[ "${MQTT_NOTIFY_URL,,}" == "mqtt"* ]] ; then
+    result="$(mosquitto_pub -L "${MQTT_NOTIFY_URL/\%\%CAMERA\%\%/$1}" -m "on" 2>&1)"
+    test "$DEBUG" == "1" && echo "url @ ${cameraname}: ${result}"
+  else
+    echo "ERROR: MQTT_NOTIFY_URL is empty or missing mqtt/mqtts"
   fi
 }
 
@@ -257,6 +270,7 @@ function process_image { #image_in #image_out
 
         # NOTIFY
         test "$NOTIFY_URL" == "1" && notify_url "$cameraname" $PARALLEL
+        test "$NOTIFY_MQTT" == "1" && notify_mqtt "$cameraname" $PARALLEL
         test "$NOTIFY_ZONEMINDER" == "1" && notify_zoneminder "$cameraname" $PARALLEL
 
         filetime="$(stat -c %W "${image_in}")"
@@ -339,6 +353,10 @@ if [ "$(which nc 2> /dev/null)" == "" ] ; then
 fi
 if [ "$(which jq 2> /dev/null)" == "" ] ; then
   echo "ERROR: jq binary not found"
+  exit 1
+fi
+if [ "$(which mosquitto_pub 2> /dev/null)" == "" ] ; then
+  echo "ERROR: mosquitto_pub binary not found, install mosquitto-clients"
   exit 1
 fi
 if [ "$DIR_INPUT" == "" ] || [ "$DIR_INPUT" == "/" ] ; then
@@ -430,6 +448,11 @@ if [ "${NOTIFY_ZONEMINDER,,}" == "yes" ] || [ "${NOTIFY_ZONEMINDER,,}" == "true"
   NOTIFY_ZONEMINDER="1"
 else
   NOTIFY_ZONEMINDER="0"
+fi
+if [ "${NOTIFY_MQTT,,}" == "yes" ] || [ "${NOTIFY_MQTT,,}" == "true" ] || [ "${NOTIFY_MQTT,,}" == "1" ] ; then
+  NOTIFY_MQTT="1"
+else
+  NOTIFY_MQTT="0"
 fi
 if [ "${NOTIFY_URL,,}" == "yes" ] || [ "${NOTIFY_URL,,}" == "true" ] || [ "${NOTIFY_URL,,}" == "1" ] ; then
   NOTIFY_URL="1"

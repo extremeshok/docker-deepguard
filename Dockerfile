@@ -12,7 +12,8 @@ RUN echo "**** install bash runtime packages ****" \
     gsfonts \
     inotify-tools \
     jq \
-    netcat
+    netcat \
+    mosquitto-clients
 
 # add local files
 COPY rootfs/ /
