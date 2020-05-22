@@ -20,7 +20,7 @@
 
 IGNORE_LIST="${IGNORE_LIST:-person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, trafficlight, firehydrant, stop_sign, parkingmeter, bench, bird, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard, sportsball, kite, baseballbat, baseballglove, skateboard, surfboard, tennisracket, bottle, wineglass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange, broccoli, carrot, hotdog, pizza, donot, cake, chair, couch, pottedplant, bed, diningtable, toilet, tv, laptop, mouse, remote, keyboard, cellphone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddybear, hairdryer, toothbrush}"
 
-NOTIFY_LIST="${NOTIFY_LIST:-person, cat}"
+NOTIFY_LIST="${NOTIFY_LIST:-person, cat, dog}"
 
 VALID_IMAGE_EXTENSION_LIST="${VALID_IMAGE_EXTENSION_LIST:-png, jpg, jpeg, gif, bmp}"
 #requires graphicsmagick
@@ -48,7 +48,7 @@ ALERT_PERIOD_SECONDS="${ALERT_PERIOD_SECONDS:-120}"
 
 DEEPSTACK_URL="${DEEPSTACK_URL:-http://deepstack:5000}"
 DEEPSTACK_BACKUP_URL="${DEEPSTACK_BACKUP_URL:-http://deepstackbackup:5000}"
-DEEPSTACK_CONFIDENCE_LIMIT="${DEEPSTACK_CONFIDENCE_LIMIT:-61}"
+DEEPSTACK_CONFIDENCE_LIMIT="${DEEPSTACK_CONFIDENCE_LIMIT:-65}"
 
 #NOTIFY
 NOTIFY_ZONEMINDER="${NOTIFY_ZONEMINDER:-no}"
