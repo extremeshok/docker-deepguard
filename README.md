@@ -27,7 +27,7 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 * DIR_INPUT="/data/input"
 * DIR_OUTPUT="/data/output"
 * DIR_BACKUP="/data/backup"
-* BACKUP_ORIGINAL="yes"
+* BACKUP_ORIGINAL="no"
 * SAVE_OUTPUT="yes"
 * EMPTY_INPUT_DIR_ON_START="no"
 * PROCESS_BACKLOG="no"
