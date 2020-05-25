@@ -34,7 +34,7 @@ DIR_BACKUP="${DIR_BACKUP:-/data/backup}"
 
 BACKUP_ORIGINAL="${BACKUP_ORIGINAL:-no}"
 SAVE_OUTPUT="${SAVE_OUTPUT:-yes}"
-EMPTY_INPUT_DIR_ON_START="${EMPTY_INPUT_DIR_ON_START:-no}"
+EMPTY_INPUT_DIR_ON_START="${EMPTY_INPUT_DIR_ON_START:-yes}"
 PROCESS_BACKLOG="${PROCESS_BACKLOG:-no}"
 
 DRAW_RESULTS="${DRAW_RESULTS:-yes}"
@@ -491,11 +491,6 @@ else
 fi
 
 mkdir -p "$DIR_INPUT"
-if [ "${EMPTY_INPUT_DIR_ON_START,,}" == "yes" ] || [ "${EMPTY_INPUT_DIR_ON_START,,}" == "true" ] || [ "${EMPTY_INPUT_DIR_ON_START,,}" == "1" ] ; then
-  test "$BE_VERBOSE" == "1" && echo "Emptying input dir: $DIR_INPUT"
-  rm -f "${DIR_INPUT}/*.*"
-  sync
-fi
 if [ "${SAVE_OUTPUT}" != "1" ] ; then
   DIR_OUTPUT="/tmp/deepstack"
 fi
@@ -518,7 +513,11 @@ if [ "${PROCESS_BACKLOG,,}" == "yes" ] || [ "${PROCESS_BACKLOG,,}" == "true" ] |
     test "$DEBUG" == "1" && echo "====>${RUN_COUNT} | AC ${ALERT_COUNT} @ ${ALERT_LAST}"
   done < <(find "${DIR_INPUT}" -maxdepth 1 -type f -print0)
 fi
-
+if [ "${EMPTY_INPUT_DIR_ON_START,,}" == "yes" ] || [ "${EMPTY_INPUT_DIR_ON_START,,}" == "true" ] || [ "${EMPTY_INPUT_DIR_ON_START,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "Emptying input dir: $DIR_INPUT"
+  rm -f "${DIR_INPUT}/*.*"
+  sync
+fi
 echo "Watching: ${DIR_INPUT}"
 inotifywait -m -e close_write,moved_to --exclude ".*(\.git|\.private|pr ivate|html|public_html|www|db|dbinfo|log|logs|sql|backup|backups|conf|config|configs)/" "${DIR_INPUT}" |
 while read -r directory events filename; do
