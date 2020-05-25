@@ -35,8 +35,10 @@ when debug mode is disabled, alerts and notifications are done in parallel (sepa
 * DEBUG="no"
 * IGNORE_NONE="no"
 * BE_VERBOSE="yes"
-* ALERT_MAX_ALERTS="2"
-* ALERT_PERIOD_SECONDS="120"
+* ALERT_ALL_MAX_ALERTS=4
+* ALERT_ALL_PERIOD_SECONDS=60
+* ALERT_CAMERA_MAX_ALERTS=2
+* ALERT_CAMERA_PERIOD_SECONDS=180
 
 ## OPTIONS
 * DEEPSTACK_URL="http://deepstack:5000"

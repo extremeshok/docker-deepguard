@@ -43,8 +43,11 @@ DEBUG="${DEBUG:-yes}"
 BE_VERBOSE="${BE_VERBOSE:-yes}"
 IGNORE_NONE="${IGNORE_NONE:-no}"
 
-ALERT_MAX_ALERTS="${ALERT_MAX_ALERTS:-2}"
-ALERT_PERIOD_SECONDS="${ALERT_PERIOD_SECONDS:-120}"
+ALERT_ALL_MAX_ALERTS="${ALERT_ALL_MAX_ALERTS:-4}"
+ALERT_ALL_PERIOD_SECONDS="${ALERT_ALL_PERIOD_SECONDS:-60}"
+
+ALERT_CAMERA_MAX_ALERTS="${ALERT_CAMERA_MAX_ALERTS:-2}"
+ALERT_CAMERA_PERIOD_SECONDS="${ALERT_CAMERA_PERIOD_SECONDS:-180}"
 
 DEEPSTACK_URL="${DEEPSTACK_URL:-http://deepstack:5000}"
 DEEPSTACK_BACKUP_URL="${DEEPSTACK_BACKUP_URL:-http://deepstackbackup:5000}"
@@ -169,7 +172,7 @@ function alert_whatsmate { #message #image
     "image": "$(base64 -w 0 ${2})"
   }
 _EOM_
-    result="$(curl $CURL_OPTIONS -X "POST" -H "X-WM-CLIENT-ID: ${WHATSMATE_CLIENT_ID}" -H "X-WM-CLIENT-SECRET: ${WHATSMATE_CLIENT_SECRET}" -H "Content-Type: application/json" --data-binary @"/tmp/jsonbody_${random}"  http://api.whatsmate.net/v3/whatsapp/group/image/message/${WHATSMATE_WHATSAPP_NUMBER0o}  2>&1)"
+    result="$(curl $CURL_OPTIONS -X "POST" -H "X-WM-CLIENT-ID: ${WHATSMATE_CLIENT_ID}" -H "X-WM-CLIENT-SECRET: ${WHATSMATE_CLIENT_SECRET}" -H "Content-Type: application/json" --data-binary @"/tmp/jsonbody_${random}"  http://api.whatsmate.net/v3/whatsapp/group/image/message/${WHATSMATE_WHATSAPP_NUMBER}  2>&1)"
     test "$DEBUG" == "1" && echo "whatsmate: $result"
     rm -f "/tmp/jsonbody_${random}"
   else
@@ -239,6 +242,7 @@ function process_image { #image_in #image_out
       result_boxes=""
 
       for ((i=0; i<$COUNT; i++)) ; do
+        #shellcheck disable=SC2206
         SUB=(${MAIN_ARRAY[i]})
         #assign
         confidence="${SUB[0]}"
@@ -271,6 +275,9 @@ function process_image { #image_in #image_out
 
         cameraname="${image_in/*\//}"
         cameraname="${cameraname/${CAMERA_NAME_DELIMINATOR}*/}"
+        cameraname="${cameraname//[[:space:]]}" #remove spaces
+        ALERT_COUNT_CAMERA="ALERT_COUNT_$cameraname"
+        ALERT_LAST_CAMERA="ALERT_LAST_$cameraname"
 
         # NOTIFY
         test "$NOTIFY_URL" == "1" && notify_url "$cameraname" $PARALLEL
@@ -282,34 +289,50 @@ function process_image { #image_in #image_out
           filetime="$(date -d "$filetime" 2> /dev/null)"
         fi
         filetime="$(date)"
+        filetime="${filetime//[[:space:]]/-}" #replace spaces with -
 
         if [ "${DRAW_RESULTS,,}" == "yes" ] || [ "${DRAW_RESULTS,,}" == "true" ] || [ "${DRAW_RESULTS}" == "1" ] ; then
+          #shellcheck disable=SC2046
           eval gm convert "${image_in}" -font "$FONT" -fill none -strokewidth 1 -pointsize 16 $(echo "$result_boxes") -gravity SouthWest -draw \"fill blue stroke none text +5,+5 '$WATERMARK'\" -gravity NorthWest -draw \"fill blue stroke none text +15,+15 '${filetime}'\" -quality 82 "${image_out}"
         fi
 
         ALERT_NOW="$(date +%s)"
-        if [[ $((ALERT_LAST + ALERT_PERIOD_SECONDS)) -lt $ALERT_NOW ]] || [[ $ALERT_COUNT -lt $ALERT_MAX_ALERTS ]] ; then
-          if [[ ALERT_COUNT -ge $ALERT_MAX_ALERTS ]] ; then
-            export ALERT_COUNT=1
+        ALERT_LAST_CAMERA_TIME=${!ALERT_LAST_CAMERA}
+        if [[ $((ALERT_LAST + ALERT_ALL_PERIOD_SECONDS)) -lt $ALERT_NOW ]] || [[ $ALERT_COUNT -lt $ALERT_ALL_MAX_ALERTS ]] ; then
+          if [[ $((ALERT_LAST_CAMERA_TIME + ALERT_ALL_PERIOD_SECONDS)) -lt $ALERT_NOW ]] || [[ ${!ALERT_COUNT_CAMERA} -lt $ALERT_CAMERA_MAX_ALERTS ]] ; then
+            if [[ ALERT_COUNT -ge $ALERT_ALL_MAX_ALERTS ]] ; then
+              export ALERT_COUNT=1
+            else
+              export ALERT_COUNT=$((ALERT_COUNT+1))
+            fi
+            if [[ ${!ALERT_COUNT_CAMERA} -ge $ALERT_CAMERA_MAX_ALERTS ]] ; then
+              #shellcheck disable=SC2140
+              export "ALERT_COUNT_$cameraname"="1"
+            else
+              #shellcheck disable=SC2140,SC1102
+              export "ALERT_COUNT_$cameraname"="$((ALERT_COUNT_$cameraname + 1))"
+            fi
+
+            test "$DEBUG" == "1" && echo "ALERT!!"
+            export ALERT_LAST="$ALERT_NOW"
+            #shellcheck disable=SC2140
+            export "ALERT_LAST_$cameraname"="$ALERT_NOW"
+
+            MESSAGE="$cameraname $filetime"
+            for k in "${!COUNTER[@]}" ; do
+              MESSAGE="${MESSAGE} $k:${COUNTER[$k]}"
+            done
+
+            test "$ALERT_PUSHOVER" == "1" && alert_pushover "${MESSAGE}" "${image_out}" $PARALLEL
+            test "$ALERT_TELEGRAM" == "1" && alert_telegram "${MESSAGE}" "${image_out}" $PARALLEL
+            test "$ALERT_WHATSMATE" == "1" && alert_whatsmate "${MESSAGE}" "${image_out}" $PARALLEL
+            test "$ALERT_NEXMO" == "1" && alert_nexmo "${MESSAGE}" "${image_out}" $PARALLEL
+            test "$ALERT_TWILIO" == "1" && alert_twilio "${MESSAGE}" "${image_out}" $PARALLEL
           else
-            export ALERT_COUNT=$((ALERT_COUNT+1))
+            test "$DEBUG" == "1" && echo "NOALERT_CAMERA"
           fi
-          test "$DEBUG" == "1" && echo "ALERT!!"
-          export ALERT_LAST="$ALERT_NOW"
-
-          MESSAGE="$cameraname $filetime"
-          for k in "${!COUNTER[@]}" ; do
-            MESSAGE="${MESSAGE} $k:${COUNTER[$k]}"
-          done
-
-          test "$ALERT_PUSHOVER" == "1" && alert_pushover "${MESSAGE}" "${image_out}" $PARALLEL
-          test "$ALERT_TELEGRAM" == "1" && alert_telegram "${MESSAGE}" "${image_out}" $PARALLEL
-          test "$ALERT_WHATSMATE" == "1" && alert_whatsmate "${MESSAGE}" "${image_out}" $PARALLEL
-          test "$ALERT_NEXMO" == "1" && alert_nexmo "${MESSAGE}" "${image_out}" $PARALLEL
-          test "$ALERT_TWILIO" == "1" && alert_twilio "${MESSAGE}" "${image_out}" $PARALLEL
-
         else
-          test "$DEBUG" == "1" && echo "NOALERT"
+          test "$DEBUG" == "1" && echo "NOALERT_ALL"
         fi
       fi
 
@@ -384,7 +407,7 @@ if [ "$DEEPSTACK_BACKUP_URL" != "" ] ; then
 fi
 
 # Process lists
-IGNORE_LIST="${IGNORE_LIST//[[:space:]]}" #to lowercase and append ,
+IGNORE_LIST="${IGNORE_LIST//[[:space:]]}" #remove spaces
 IGNORE_LIST="${IGNORE_LIST//;/,}" #replace ; with ,
 IGNORE_LIST=",${IGNORE_LIST,,}," #to lowercase and append ,
 NOTIFY_LIST="${NOTIFY_LIST//[[:space:]]}" #remove spaces
