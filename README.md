@@ -3,6 +3,9 @@ camera monitoring and alerts using deepstack
 
 https://hub.docker.com/r/extremeshok/deepguard
 
+![alt text](https://raw.githubusercontent.com/extremeshok/docker-deepguard/master/icon.png "Logo")
+
+
 # Features
 * Latest ubuntu with S6
 * The power of Deepstack (machine learning / AI) to Guard your property
