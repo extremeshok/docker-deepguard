@@ -1,7 +1,7 @@
 # docker-deepguard
 camera monitoring and alerts using deepstack
 
-https://hub.docker.com/r/extremeshok/deepstack
+https://hub.docker.com/r/extremeshok/deepguard
 
 # Features
 * Latest ubuntu with S6
