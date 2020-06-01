@@ -270,9 +270,7 @@ function process_image { #image_in #image_out
 
             test "$DEBUG" == "1" && echo "${SUB_ARRAY[0]} -ge $DEEPSTACK_CONFIDENCE_LIMIT"
 
-            this_label="${SUB_ARRAY[1]}"
-
-            if [[ "$NOTIFY_LIST" =~ ",${this_label,,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${this_label,,}," ]] ; then
+            if [[ "$NOTIFY_LIST" =~ ",${SUB_ARRAY[1],,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${SUB_ARRAY[1],,}," ]] ; then
               color="$(echo "${SUB_ARRAY[1]}" | md5sum)"
               color="${color:2:6}"
 
