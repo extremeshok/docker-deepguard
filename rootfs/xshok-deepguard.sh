@@ -218,8 +218,8 @@ function process_image { #image_in #image_out
   x_max=""
   declare -A MAIN_ARRAY
   declare -A COUNTER
+  declare -A SUB_ARRAY
   MAIN_ARRAY_COUNT=0
-  SUB=""
   result_boxes=""
 
   if [ -f "$image_in" ] ; then
@@ -241,8 +241,8 @@ function process_image { #image_in #image_out
           confidence="${confidence:2:2}"
         fi
         test "$DEBUG" == "1" && echo "$confidence | $label | $y_min | $x_min | $y_max | $x_max"
-        SUB=("$confidence" "$label" "$y_min" "$x_min" "$y_max" "$x_max")
-        MAIN_ARRAY[$count]="${SUB[*]}"
+        SUB_ARRAY=("$confidence" "$label" "$y_min" "$x_min" "$y_max" "$x_max")
+        MAIN_ARRAY[$count]="${SUB_ARRAY[*]}"
         count=$((count + 1))
       done < <(echo "$result" | sed -e 's/[[:space:]]//g' | jq -r '.predictions[]|"\(.confidence) \(.label) \(.y_min) \(.x_min) \(.y_max) \(.x_max)"')
 
@@ -259,16 +259,16 @@ function process_image { #image_in #image_out
         for ((i=0; i<$MAIN_ARRAY_COUNT; i++)) ; do
           test "$DEBUG" == "1" && echo "processing SUB ${i}"
           #shellcheck disable=SC2206
-          SUB=(${MAIN_ARRAY[i]})
+          SUB_ARRAY=(${MAIN_ARRAY[i]})
           #assign
-          confidence="${SUB[0]}"
-          label="${SUB[1]}"
-          y_min="${SUB[2]}"
-          x_min="${SUB[3]}"
-          y_max="${SUB[4]}"
-          x_max="${SUB[5]}"
+          confidence="${SUB_ARRAY[0]}"
+          label="${SUB_ARRAY[1]}"
+          y_min="${SUB_ARRAY[2]}"
+          x_min="${SUB_ARRAY[3]}"
+          y_max="${SUB_ARRAY[4]}"
+          x_max="${SUB_ARRAY[5]}"
 
-          test "$DEBUG" == "1" && echo "SUB: ${SUB}"
+          test "$DEBUG" == "1" && echo "SUB_ARRAY: ${SUB_ARRAY}"
 
           #shellcheck disable=SC2076
           if [[ "$confidence" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
