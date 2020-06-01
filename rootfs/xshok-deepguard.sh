@@ -18,6 +18,7 @@
 #
 ################################################################################
 
+
 IGNORE_LIST="${IGNORE_LIST:-person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, trafficlight, firehydrant, stop_sign, parkingmeter, bench, bird, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard, sportsball, kite, baseballbat, baseballglove, skateboard, surfboard, tennisracket, bottle, wineglass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange, broccoli, carrot, hotdog, pizza, donot, cake, chair, couch, pottedplant, bed, diningtable, toilet, tv, laptop, mouse, remote, keyboard, cellphone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddybear, hairdryer, toothbrush}"
 
 NOTIFY_LIST="${NOTIFY_LIST:-person, bear, cat, dog}" #people are sometimes detected as bears
@@ -265,16 +266,18 @@ function process_image { #image_in #image_out
           #assign
           test "$DEBUG" == "1" && echo "confidence ${SUB_ARRAY[0]} | label ${SUB_ARRAY[1]} | y_min ${SUB_ARRAY[2]} | x_min ${SUB_ARRAY[3]} | y_max ${SUB_ARRAY[4]} | x_max ${SUB_ARRAY[5]}"
 
-          test "$DEBUG" == "1" && echo "SUB_ARRAY: ${SUB_ARRAY[*]}"
-
           #shellcheck disable=SC2076
           if [[ "$confidence" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
 
-            if [[ "$NOTIFY_LIST" =~ ",${SUB_ARRAY[1],,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${SUB_ARRAY[1],,}," ]] ; then
+            test "$DEBUG" == "1" && echo "${SUB_ARRAY[0]} -ge $DEEPSTACK_CONFIDENCE_LIMIT"
+
+            this_label="${SUB_ARRAY[1]}"
+
+            if [[ "$NOTIFY_LIST" =~ ",${this_label,,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${this_label,,}," ]] ; then
               color="$(echo "${SUB_ARRAY[1]}" | md5sum)"
               color="${color:2:6}"
 
-              test "$DEBUG" == "1" && echo "${SUB_ARRAY[0]} | ${SUB_ARRAY[1]} | ${SUB_ARRAY[2]} | ${SUB_ARRAY[3]} | ${SUB_ARRAY[4]} | ${SUB_ARRAY[5]}"
+              test "$DEBUG" == "1" && echo "NOTIFY_LIST or not IGNORE_LIST"
 
               result_boxes="${result_boxes} -stroke \"#${color}\" -fill none -draw \"rectangle ${SUB_ARRAY[3]},${SUB_ARRAY[2]},${SUB_ARRAY[5]},${SUB_ARRAY[4]}\" -stroke none -fill \"#${color}\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[2]} '${SUB_ARRAY[1]}'\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[4]} ' ${SUB_ARRAY[0]} %'\""
 
