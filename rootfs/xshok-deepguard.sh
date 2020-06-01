@@ -224,13 +224,11 @@ function process_image { #image_in #image_out
 
   if [ -f "$image_in" ] ; then
     test "$BE_VERBOSE" == "1" && echo "Processing image: $image_in"
-    result="$(curl --retry 2 --retry-connrefused 1 --retry-max-time 5 --retry-delay 0 --fail -k -X "POST" -F "image=@${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
-    #result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
+    result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
     res=$?
     if [ "$res" != 0 ] ; then
       test "$BE_VERBOSE" == "1" && echo "Retrying with deepstack backup"
-      result="$(curl --retry 2 --retry-connrefused 1 --retry-max-time 5 --retry-delay 0 --fail -k -X "POST" -F "image=@${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
-      #result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
+            result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
       res=$?
     fi
     if [ "$res" == 0 ] && [ "$result" != "" ] ; then
@@ -435,6 +433,7 @@ export ALERT_LAST=0
 
 # Assign bools
 if [ "${DEBUG,,}" == "yes" ] || [ "${DEBUG,,}" == "true" ] || [ "${DEBUG,,}" == "1" ] ; then
+  echo "DEBUG: enabled"
   DEBUG="1"
   BE_VERBOSE="1"
   PARALLEL=""
@@ -442,6 +441,7 @@ else
   DEBUG="0"
   PARALLEL="&"
   if [ "${BE_VERBOSE,,}" == "yes" ] || [ "${BE_VERBOSE,,}" == "true" ] || [ "${BE_VERBOSE,,}" == "1" ] ; then
+    echo "VERBOSE: enabled"
     BE_VERBOSE="1"
   else
     BE_VERBOSE="0"
@@ -451,41 +451,49 @@ if [ "${IGNORE_NONE,,}" == "yes" ] || [ "${IGNORE_NONE,,}" == "true" ] || [ "${I
   IGNORE_LIST=""
 fi
 if [ "${SAVE_OUTPUT,,}" == "yes" ] || [ "${SAVE_OUTPUT,,}" == "true" ] || [ "${SAVE_OUTPUT,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "SAVE_OUTPUT: enabled"
   SAVE_OUTPUT="1"
 else
   SAVE_OUTPUT="0"
 fi
 if [ "${BACKUP_ORIGINAL,,}" == "yes" ] || [ "${BACKUP_ORIGINAL,,}" == "true" ] || [ "${BACKUP_ORIGINAL,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "BACKUP_ORIGINAL: enabled"
   BACKUP_ORIGINAL="1"
 else
   BACKUP_ORIGINAL="0"
 fi
 if [ "${ALERT_PUSHOVER,,}" == "yes" ] || [ "${ALERT_PUSHOVER,,}" == "true" ] || [ "${ALERT_PUSHOVER,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "ALERT_PUSHOVER: enabled"
   ALERT_PUSHOVER="1"
 else
   ALERT_PUSHOVER="0"
 fi
 if [ "${ALERT_TELEGRAM,,}" == "yes" ] || [ "${ALERT_TELEGRAM,,}" == "true" ] || [ "${ALERT_TELEGRAM,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "ALERT_TELEGRAM: enabled"
   ALERT_TELEGRAM="1"
 else
   ALERT_TELEGRAM="0"
 fi
 if [ "${ALERT_WHATSMATE,,}" == "yes" ] || [ "${ALERT_WHATSMATE,,}" == "true" ] || [ "${ALERT_WHATSMATE,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "ALERT_WHATSMATE: enabled"
   ALERT_WHATSMATE="1"
 else
   ALERT_WHATSMATE="0"
 fi
 if [ "${ALERT_NEXMO,,}" == "yes" ] || [ "${ALERT_NEXMO,,}" == "true" ] || [ "${ALERT_NEXMO,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "ALERT_NEXMO: enabled"
   ALERT_NEXMO="1"
 else
   ALERT_NEXMO="0"
 fi
 if [ "${ALERT_TWILIO,,}" == "yes" ] || [ "${ALERT_TWILIO,,}" == "true" ] || [ "${ALERT_TWILIO,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "ALERT_TWILIO: enabled"
   ALERT_TWILIO="1"
 else
   ALERT_TWILIO="0"
 fi
 if [ "${NOTIFY_ZONEMINDER,,}" == "yes" ] || [ "${NOTIFY_ZONEMINDER,,}" == "true" ] || [ "${NOTIFY_ZONEMINDER,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "NOTIFY_ZONEMINDER: enabled"
   NOTIFY_ZONEMINDER="1"
 else
   NOTIFY_ZONEMINDER="0"
@@ -495,11 +503,13 @@ if [ "${NOTIFY_MQTT,,}" == "yes" ] || [ "${NOTIFY_MQTT,,}" == "true" ] || [ "${N
     echo "ERROR: mosquitto_pub binary not found, install mosquitto-clients"
     exit 1
   fi
+  test "$BE_VERBOSE" == "1" && echo "NOTIFY_MQTT: enabled"
   NOTIFY_MQTT="1"
 else
   NOTIFY_MQTT="0"
 fi
 if [ "${NOTIFY_URL,,}" == "yes" ] || [ "${NOTIFY_URL,,}" == "true" ] || [ "${NOTIFY_URL,,}" == "1" ] ; then
+  test "$BE_VERBOSE" == "1" && echo "NOTIFY_URL: enabled"
   NOTIFY_URL="1"
 else
   NOTIFY_URL="0"
