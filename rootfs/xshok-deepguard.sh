@@ -20,7 +20,7 @@
 
 IGNORE_LIST="${IGNORE_LIST:-person, bicycle, car, motorcycle, airplane, bus, train, truck, boat, trafficlight, firehydrant, stop_sign, parkingmeter, bench, bird, cat, dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella, handbag, tie, suitcase, frisbee, skis, snowboard, sportsball, kite, baseballbat, baseballglove, skateboard, surfboard, tennisracket, bottle, wineglass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange, broccoli, carrot, hotdog, pizza, donot, cake, chair, couch, pottedplant, bed, diningtable, toilet, tv, laptop, mouse, remote, keyboard, cellphone, microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors, teddybear, hairdryer, toothbrush}"
 
-NOTIFY_LIST="${NOTIFY_LIST:-person, cat, dog}"
+NOTIFY_LIST="${NOTIFY_LIST:-person, bear, cat, dog}" #people are sometimes detected as bears
 
 VALID_IMAGE_EXTENSION_LIST="${VALID_IMAGE_EXTENSION_LIST:-png, jpg, jpeg, gif, bmp}"
 #requires graphicsmagick
@@ -49,7 +49,7 @@ ALERT_ALL_PERIOD_SECONDS="${ALERT_ALL_PERIOD_SECONDS:-60}"
 ALERT_CAMERA_MAX_ALERTS="${ALERT_CAMERA_MAX_ALERTS:-2}"
 ALERT_CAMERA_PERIOD_SECONDS="${ALERT_CAMERA_PERIOD_SECONDS:-180}"
 
-DEEPSTACK_URL="${DEEPSTACK_URL:-http://deepstack:5000}"
+#DEEPSTACK_URL="${DEEPSTACK_URL:-http://deepstack:5000}"
 DEEPSTACK_BACKUP_URL="${DEEPSTACK_BACKUP_URL:-http://deepstackbackup:5000}"
 DEEPSTACK_CONFIDENCE_LIMIT="${DEEPSTACK_CONFIDENCE_LIMIT:-65}"
 
@@ -216,9 +216,9 @@ function process_image { #image_in #image_out
   x_min=""
   y_max=""
   x_max=""
-  declare -A MAIN_ARRAY
+  declare -a MAIN_ARRAY
+  declare -a SUB_ARRAY
   declare -A COUNTER
-  declare -A SUB_ARRAY
   MAIN_ARRAY_COUNT=0
   result_boxes=""
 
@@ -235,14 +235,14 @@ function process_image { #image_in #image_out
     fi
     if [ "$res" == 0 ] ; then
       test "$DEBUG" == "1" && echo "$result"
-      count=0
+      thiscount=0
       while read "confidence" "label" "y_min" "x_min" "y_max" "x_max"; do
         if [ ! -z "$confidence" ] ; then
           confidence="${confidence:2:2}"
         fi
-        test "$DEBUG" == "1" && echo "$confidence | $label | $y_min | $x_min | $y_max | $x_max"
-        MAIN_ARRAY[$count]="${confidence},${label},${y_min},${x_min},${y_max},${x_max}"
-        count=$((count + 1))
+        test "$DEBUG" == "1" && echo "$thiscount | $confidence | $label | $y_min | $x_min | $y_max | $x_max"
+        MAIN_ARRAY[$thiscount]="${confidence},${label},${y_min},${x_min},${y_max},${x_max}"
+        thiscount=$((thiscount + 1))
       done < <(echo "$result" | sed -e 's/[[:space:]]//g' | jq -r '.predictions[]|"\(.confidence) \(.label) \(.y_min) \(.x_min) \(.y_max) \(.x_max)"')
 
       MAIN_ARRAY_COUNT=${#MAIN_ARRAY[@]}
@@ -254,37 +254,34 @@ function process_image { #image_in #image_out
 
         test "$DEBUG" == "1" && echo "processing MAIN_ARRAY"
         test "$DEBUG" == "1" && echo "MAIN_ARRAY: ${MAIN_ARRAY[*]}"
+        test "$DEBUG" == "1" && echo "MAIN_ARRAY[0]: ${MAIN_ARRAY[1]}"
+        test "$DEBUG" == "1" && echo "MAIN_ARRAY[1]: ${MAIN_ARRAY[2]}"
 
         for ((i=0; i<$MAIN_ARRAY_COUNT; i++)) ; do
           test "$DEBUG" == "1" && echo "processing SUB ${i}"
 
-          readarray -td, SUB_ARRAY <<<"${MAIN_ARRAY[i]},"; declare -p SUB_ARRAY;
+          readarray -td, SUB_ARRAY <<<"${MAIN_ARRAY[i]}";
 
           #assign
-          confidence="${SUB_ARRAY[0]}"
-          label="${SUB_ARRAY[1]}"
-          y_min="${SUB_ARRAY[2]}"
-          x_min="${SUB_ARRAY[3]}"
-          y_max="${SUB_ARRAY[4]}"
-          x_max="${SUB_ARRAY[5]}"
+          test "$DEBUG" == "1" && echo "confidence ${SUB_ARRAY[0]} | label ${SUB_ARRAY[1]} | y_min ${SUB_ARRAY[2]} | x_min ${SUB_ARRAY[3]} | y_max ${SUB_ARRAY[4]} | x_max ${SUB_ARRAY[5]}"
 
           test "$DEBUG" == "1" && echo "SUB_ARRAY: ${SUB_ARRAY[*]}"
 
           #shellcheck disable=SC2076
           if [[ "$confidence" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
 
-            if [[ "$NOTIFY_LIST" =~ ",${label,,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${label,,}," ]] ; then
-              color="$(echo "$label" | md5sum)"
+            if [[ "$NOTIFY_LIST" =~ ",${SUB_ARRAY[1],,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${SUB_ARRAY[1],,}," ]] ; then
+              color="$(echo "${SUB_ARRAY[1]}" | md5sum)"
               color="${color:2:6}"
 
-              test "$DEBUG" == "1" && echo "$confidence | $label | $y_min | $x_min | $y_max | $x_max"
+              test "$DEBUG" == "1" && echo "${SUB_ARRAY[0]} | ${SUB_ARRAY[1]} | ${SUB_ARRAY[2]} | ${SUB_ARRAY[3]} | ${SUB_ARRAY[4]} | ${SUB_ARRAY[5]}"
 
-              result_boxes="${result_boxes} -stroke \"#${color}\" -fill none -draw \"rectangle ${x_min},${y_min},${x_max},${y_max}\" -stroke none -fill \"#${color}\" -draw \"text $x_min,$y_min '${label}'\" -draw \"text $x_min,$y_max ' ${confidence} %'\""
+              result_boxes="${result_boxes} -stroke \"#${color}\" -fill none -draw \"rectangle ${SUB_ARRAY[3]},${SUB_ARRAY[2]},${SUB_ARRAY[5]},${SUB_ARRAY[4]}\" -stroke none -fill \"#${color}\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[2]} '${SUB_ARRAY[1]}'\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[4]} ' ${SUB_ARRAY[0]} %'\""
 
-              COUNTER["$label"]=$((${COUNTER["$label"]}+1))
+              COUNTER["${SUB_ARRAY[1]}"]=$((${COUNTER["${SUB_ARRAY[1]}"]}+1))
 
             else
-              test "$BE_VERBOSE" == "1" && echo "$label : not required or on ignore list"
+              test "$BE_VERBOSE" == "1" && echo "${SUB_ARRAY[1]} : not required or on ignore list"
             fi
           fi
         done
@@ -402,10 +399,6 @@ if [ "$(which jq 2> /dev/null)" == "" ] ; then
   echo "ERROR: jq binary not found"
   exit 1
 fi
-if [ "$(which mosquitto_pub 2> /dev/null)" == "" ] ; then
-  echo "ERROR: mosquitto_pub binary not found, install mosquitto-clients"
-  exit 1
-fi
 if [ "$DIR_INPUT" == "" ] || [ "$DIR_INPUT" == "/" ] ; then
   echo "ERROR: DIR_INPUT is invalid"
   exit 1
@@ -500,6 +493,10 @@ else
   NOTIFY_ZONEMINDER="0"
 fi
 if [ "${NOTIFY_MQTT,,}" == "yes" ] || [ "${NOTIFY_MQTT,,}" == "true" ] || [ "${NOTIFY_MQTT,,}" == "1" ] ; then
+  if [ "$(which mosquitto_pub 2> /dev/null)" == "" ] ; then
+    echo "ERROR: mosquitto_pub binary not found, install mosquitto-clients"
+    exit 1
+  fi
   NOTIFY_MQTT="1"
 else
   NOTIFY_MQTT="0"
