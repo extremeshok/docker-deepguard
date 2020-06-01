@@ -210,7 +210,6 @@ function process_image { #image_in #image_out
   cameraname=""
   result=""
   res=""
-  count=0
   confidence=0
   label=""
   y_min=""
@@ -236,7 +235,7 @@ function process_image { #image_in #image_out
     fi
     if [ "$res" == 0 ] ; then
       test "$DEBUG" == "1" && echo "$result"
-
+      count=0
       while read "confidence" "label" "y_min" "x_min" "y_max" "x_max"; do
         if [ ! -z "$confidence" ] ; then
           confidence="${confidence:2:2}"
@@ -247,9 +246,8 @@ function process_image { #image_in #image_out
         count=$((count + 1))
       done < <(echo "$result" | sed -e 's/[[:space:]]//g' | jq -r '.predictions[]|"\(.confidence) \(.label) \(.y_min) \(.x_min) \(.y_max) \(.x_max)"')
 
-      test "$DEBUG" == "1" && echo "count : ${#MAIN_ARRAY[@]}"
-
       MAIN_ARRAY_COUNT=${#MAIN_ARRAY[@]}
+      test "$DEBUG" == "1" && echo "MAIN_ARRAY_COUNT : ${MAIN_ARRAY_COUNT}"
 
       result_boxes=""
 
