@@ -224,16 +224,16 @@ function process_image { #image_in #image_out
 
   if [ -f "$image_in" ] ; then
     test "$BE_VERBOSE" == "1" && echo "Processing image: $image_in"
-    result="$(curl --retry 1 --retry-connrefused 1 --retry-max-time 10 --retry-delay 1 --fail-early --insecure --silent -X "POST" -F "image=@${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
+    result="$(curl --retry 2 --retry-connrefused 1 --retry-max-time 5 --retry-delay 0 --fail -k -X "POST" -F "image=@${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
     #result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
     res=$?
     if [ "$res" != 0 ] ; then
       test "$BE_VERBOSE" == "1" && echo "Retrying with deepstack backup"
-      result="$(curl --retry 1 --retry-connrefused 1 --retry-max-time 5 --retry-delay 1 --fail-early --insecure --silent -X "POST" -F "image=@${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
+      result="$(curl --retry 2 --retry-connrefused 1 --retry-max-time 5 --retry-delay 0 --fail -k -X "POST" -F "image=@${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
       #result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
       res=$?
     fi
-    if [ "$res" == 0 ] ; then
+    if [ "$res" == 0 ] && [ "$result" != "" ] ; then
       test "$DEBUG" == "1" && echo "$result"
       thiscount=0
       while read "confidence" "label" "y_min" "x_min" "y_max" "x_max"; do
