@@ -241,8 +241,7 @@ function process_image { #image_in #image_out
           confidence="${confidence:2:2}"
         fi
         test "$DEBUG" == "1" && echo "$confidence | $label | $y_min | $x_min | $y_max | $x_max"
-        SUB_ARRAY=([0]="$confidence" [1]="$label" [2]="$y_min" [3]="$x_min" [4]="$y_max" [5]="$x_max")
-        MAIN_ARRAY[$count]="${SUB_ARRAY[*]}"
+        MAIN_ARRAY[$count]="${confidence},${label},${y_min},${x_min},${y_max},${x_max}"
         count=$((count + 1))
       done < <(echo "$result" | sed -e 's/[[:space:]]//g' | jq -r '.predictions[]|"\(.confidence) \(.label) \(.y_min) \(.x_min) \(.y_max) \(.x_max)"')
 
@@ -258,8 +257,9 @@ function process_image { #image_in #image_out
 
         for ((i=0; i<$MAIN_ARRAY_COUNT; i++)) ; do
           test "$DEBUG" == "1" && echo "processing SUB ${i}"
-          #shellcheck disable=SC2206
-          SUB_ARRAY=(${MAIN_ARRAY[i]})
+
+          readarray -td, SUB_ARRAY <<<"${MAIN_ARRAY[i]},"; declare -p SUB_ARRAY;
+
           #assign
           confidence="${SUB_ARRAY[0]}"
           label="${SUB_ARRAY[1]}"
