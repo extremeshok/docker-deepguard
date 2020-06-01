@@ -253,7 +253,10 @@ function process_image { #image_in #image_out
 
       if [[ $MAIN_ARRAY_COUNT -gt 0 ]] ; then
 
+        test "$DEBUG" == "1" && echo "processing MAIN_ARRAY"
+
         for ((i=0; i<$MAIN_ARRAY_COUNT; i++)) ; do
+          test "$DEBUG" == "1" && echo "processing SUB ${i}"
           #shellcheck disable=SC2206
           SUB=(${MAIN_ARRAY[i]})
           #assign
@@ -263,6 +266,8 @@ function process_image { #image_in #image_out
           x_min="${SUB[3]}"
           y_max="${SUB[4]}"
           x_max="${SUB[5]}"
+
+
 
           #shellcheck disable=SC2076
           if [[ "$confidence" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
