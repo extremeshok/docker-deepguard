@@ -206,6 +206,23 @@ function process_image { #image_in #image_out
   image_in="$1"
   image_out="$2"
 
+  # reset varibles
+  cameraname=""
+  result=""
+  res=""
+  count=0
+  confidence=0
+  label=""
+  y_min=""
+  x_min=""
+  y_max=""
+  x_max=""
+  declare -A MAIN_ARRAY
+  declare -A COUNTER
+  MAIN_ARRAY_COUNT=0
+  SUB=""
+  result_boxes=""
+
   if [ -f "$image_in" ] ; then
     test "$BE_VERBOSE" == "1" && echo "Processing image: $image_in"
     #result="$(curl --retry 1 --retry-connrefused 1 --retry-max-time 10 --retry-delay 1 --fail-early --insecure --silent -X "POST" -F "image=@${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
@@ -220,12 +237,9 @@ function process_image { #image_in #image_out
     if [ "$res" == 0 ] ; then
       test "$DEBUG" == "1" && echo "$result"
 
-      count=0
       while read "confidence" "label" "y_min" "x_min" "y_max" "x_max"; do
         if [ ! -z "$confidence" ] ; then
           confidence="${confidence:2:2}"
-        else
-          confidence=0
         fi
         test "$DEBUG" == "1" && echo "$confidence | $label | $y_min | $x_min | $y_max | $x_max"
         SUB=("$confidence" "$label" "$y_min" "$x_min" "$y_max" "$x_max")
@@ -235,41 +249,43 @@ function process_image { #image_in #image_out
 
       test "$DEBUG" == "1" && echo "count : ${#MAIN_ARRAY[@]}"
 
-      COUNT=${#MAIN_ARRAY[@]}
-
-      declare -A COUNTER
+      MAIN_ARRAY_COUNT=${#MAIN_ARRAY[@]}
 
       result_boxes=""
 
-      for ((i=0; i<$COUNT; i++)) ; do
-        #shellcheck disable=SC2206
-        SUB=(${MAIN_ARRAY[i]})
-        #assign
-        confidence="${SUB[0]}"
-        label="${SUB[1]}"
-        y_min="${SUB[2]}"
-        x_min="${SUB[3]}"
-        y_max="${SUB[4]}"
-        x_max="${SUB[5]}"
+      if [[ $MAIN_ARRAY_COUNT -gt 0 ]] ; then
 
-        #shellcheck disable=SC2076
-        if [[ "$confidence" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
+        for ((i=0; i<$MAIN_ARRAY_COUNT; i++)) ; do
+          #shellcheck disable=SC2206
+          SUB=(${MAIN_ARRAY[i]})
+          #assign
+          confidence="${SUB[0]}"
+          label="${SUB[1]}"
+          y_min="${SUB[2]}"
+          x_min="${SUB[3]}"
+          y_max="${SUB[4]}"
+          x_max="${SUB[5]}"
 
-          if [[ "$NOTIFY_LIST" =~ ",${label,,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${label,,}," ]] ; then
-            color="$(echo "$label" | md5sum)"
-            color="${color:2:6}"
+          #shellcheck disable=SC2076
+          if [[ "$confidence" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
 
-            test "$DEBUG" == "1" && echo "$confidence | $label | $y_min | $x_min | $y_max | $x_max"
+            if [[ "$NOTIFY_LIST" =~ ",${label,,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${label,,}," ]] ; then
+              color="$(echo "$label" | md5sum)"
+              color="${color:2:6}"
 
-            result_boxes="${result_boxes} -stroke \"#${color}\" -fill none -draw \"rectangle ${x_min},${y_min},${x_max},${y_max}\" -stroke none -fill \"#${color}\" -draw \"text $x_min,$y_min '${label}'\" -draw \"text $x_min,$y_max ' ${confidence} %'\""
+              test "$DEBUG" == "1" && echo "$confidence | $label | $y_min | $x_min | $y_max | $x_max"
 
-            COUNTER["$label"]=$((${COUNTER["$label"]}+1))
+              result_boxes="${result_boxes} -stroke \"#${color}\" -fill none -draw \"rectangle ${x_min},${y_min},${x_max},${y_max}\" -stroke none -fill \"#${color}\" -draw \"text $x_min,$y_min '${label}'\" -draw \"text $x_min,$y_max ' ${confidence} %'\""
 
-          else
-            test "$BE_VERBOSE" == "1" && echo "$label : not required or on ignore list"
+              COUNTER["$label"]=$((${COUNTER["$label"]}+1))
+
+            else
+              test "$BE_VERBOSE" == "1" && echo "$label : not required or on ignore list"
+            fi
           fi
-        fi
-      done
+        done
+
+      fi
 
       if [ "$result_boxes" != "" ] ; then
 
