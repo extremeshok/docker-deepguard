@@ -234,7 +234,6 @@ function process_image { #image_in #image_out
       res=$?
     fi
 
-    test "$DEBUG" == "1" && echo "RESULT: $result"
     #shellcheck disable=SC2076
     if [ "$res" != 0 ] || [ "$result" == "" ] ; then
       echo "RESULT ERROR: $result"
@@ -242,7 +241,7 @@ function process_image { #image_in #image_out
       echo "RESULT ERROR: $result"
       result=""
     elif [[ "${result,,}" =~ '"predictions":[]' ]] ; then
-      echo "NO RESULTS: $result"
+      test "$BE_VERBOSE" == "1" && echo "NO RESULTS: $result"
       result=""
     else
       thiscount=0
