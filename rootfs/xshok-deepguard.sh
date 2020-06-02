@@ -228,144 +228,146 @@ function process_image { #image_in #image_out
     res=$?
     if [ "$res" != 0 ] && [ "$DEEPSTACK_BACKUP_URL" != "" ] ; then
       test "$BE_VERBOSE" == "1" && echo "Retrying with deepstack backup"
-            result="$(curl -k -X POST -F image=@"${image_in}" -F min_confidence="0.${DEEPSTACK_CONFIDENCE_LIMIT}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
+      result="$(curl -k -X POST -F image=@"${image_in}" -F min_confidence="0.${DEEPSTACK_CONFIDENCE_LIMIT}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
       res=$?
     fi
-
     test "$DEBUG" == "1" && echo "RESULT: $result"
-    if [[ ! "${result,,}" =~ "error" ]] ; then
-      echo "ERROR: $result"
+    #shellcheck disable=SC2076
+    if [[ "${result,,}" =~ "error" ]] ; then
+      echo "RESULT ERROR: $result"
       result=""
-    fi
-
-    if [ "$res" == 0 ] && [ "$result" != "" ] ; then
-      thiscount=0
-      while read "confidence" "label" "y_min" "x_min" "y_max" "x_max"; do
-        if [ ! -z "$confidence" ] ; then
-          confidence="${confidence:2:2}"
-        fi
-        test "$DEBUG" == "1" && echo "$thiscount | $confidence | $label | $y_min | $x_min | $y_max | $x_max"
-        MAIN_ARRAY[$thiscount]="${confidence},${label},${y_min},${x_min},${y_max},${x_max}"
-        thiscount=$((thiscount + 1))
-      done < <(echo "$result" | sed -e 's/[[:space:]]//g' | jq -r '.predictions[]|"\(.confidence) \(.label) \(.y_min) \(.x_min) \(.y_max) \(.x_max)"')
-
-      MAIN_ARRAY_COUNT=${#MAIN_ARRAY[@]}
-      test "$DEBUG" == "1" && echo "MAIN_ARRAY_COUNT : ${MAIN_ARRAY_COUNT}"
-
-      result_boxes=""
-
-      if [[ $MAIN_ARRAY_COUNT -gt 0 ]] ; then
-
-        test "$DEBUG" == "1" && echo "processing MAIN_ARRAY"
-        test "$DEBUG" == "1" && echo "MAIN_ARRAY: ${MAIN_ARRAY[*]}"
-
-        for ((i=0; i<$MAIN_ARRAY_COUNT; i++)) ; do
-          test "$DEBUG" == "1" && echo "processing SUB_ARRAY ${i}"
-
-          readarray -td, SUB_ARRAY <<<"${MAIN_ARRAY[i]}";
-
-          #assign
-          test "$BE_VERBOSE" == "1" && echo "confidence ${SUB_ARRAY[0]} | label ${SUB_ARRAY[1]} | y_min ${SUB_ARRAY[2]} | x_min ${SUB_ARRAY[3]} | y_max ${SUB_ARRAY[4]} | x_max ${SUB_ARRAY[5]}"
-
-          #shellcheck disable=SC2076
-          if [[ "${SUB_ARRAY[0]}" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
-
-            test "$DEBUG" == "1" && echo "${SUB_ARRAY[0]} -ge $DEEPSTACK_CONFIDENCE_LIMIT"
-
-            if [[ "$NOTIFY_LIST" =~ ",${SUB_ARRAY[1],,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${SUB_ARRAY[1],,}," ]] ; then
-              color="$(echo "${SUB_ARRAY[1]}" | md5sum)"
-              color="${color:2:6}"
-
-              test "$DEBUG" == "1" && echo "NOTIFY_LIST or not IGNORE_LIST"
-
-              result_boxes="${result_boxes} -stroke \"#${color}\" -fill none -draw \"rectangle ${SUB_ARRAY[3]},${SUB_ARRAY[2]},${SUB_ARRAY[5]},${SUB_ARRAY[4]}\" -stroke none -fill \"#${color}\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[2]} '${SUB_ARRAY[1]}'\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[4]} ' ${SUB_ARRAY[0]} %'\""
-
-              COUNTER["${SUB_ARRAY[1]}"]=$((${COUNTER["${SUB_ARRAY[1]}"]}+1))
-
-            else
-              test "$BE_VERBOSE" == "1" && echo "${SUB_ARRAY[1]} : not required or on ignore list"
-            fi
-          fi
-        done
-
-      fi
-
-      if [ "$result_boxes" != "" ] ; then
-
-        cameraname="${image_in/*\//}"
-        cameraname="${cameraname/${CAMERA_NAME_DELIMINATOR}*/}"
-        cameraname="${cameraname//[[:space:]]}" #remove spaces
-        ALERT_COUNT_CAMERA="ALERT_COUNT_$cameraname"
-        ALERT_LAST_CAMERA="ALERT_LAST_$cameraname"
-
-        # NOTIFY
-        test "$NOTIFY_URL" == "1" && notify_url "$cameraname" $PARALLEL
-        test "$NOTIFY_MQTT" == "1" && notify_mqtt "$cameraname" $PARALLEL
-        test "$NOTIFY_ZONEMINDER" == "1" && notify_zoneminder "$cameraname" $PARALLEL
-
-        filetime="$(stat -c %W "${image_in}")"
-        if [ "$filetime" != "0" ] && [ "$filetime" != "0" ] ; then
-          filetime="$(date -d "$filetime" 2> /dev/null)"
-        fi
-        filetime="$(date)"
-        filetime="${filetime//[[:space:]]/-}" #replace spaces with -
-
-        if [ "${DRAW_RESULTS,,}" == "yes" ] || [ "${DRAW_RESULTS,,}" == "true" ] || [ "${DRAW_RESULTS}" == "1" ] ; then
-          #shellcheck disable=SC2046
-          eval gm convert "${image_in}" -font "$FONT" -fill none -strokewidth 1 -pointsize 16 $(echo "$result_boxes") -gravity SouthWest -draw \"fill blue stroke none text +5,+5 '$WATERMARK'\" -gravity NorthWest -draw \"fill blue stroke none text +15,+15 '${filetime}'\" -quality 82 "${image_out}"
-        fi
-
-        ALERT_NOW="$(date +%s)"
-        ALERT_LAST_CAMERA_TIME=${!ALERT_LAST_CAMERA}
-        if [[ $((ALERT_LAST + ALERT_ALL_PERIOD_SECONDS)) -lt $ALERT_NOW ]] || [[ $ALERT_COUNT -lt $ALERT_ALL_MAX_ALERTS ]] ; then
-          if [[ $((ALERT_LAST_CAMERA_TIME + ALERT_ALL_PERIOD_SECONDS)) -lt $ALERT_NOW ]] || [[ ${!ALERT_COUNT_CAMERA} -lt $ALERT_CAMERA_MAX_ALERTS ]] ; then
-            if [[ ALERT_COUNT -ge $ALERT_ALL_MAX_ALERTS ]] ; then
-              export ALERT_COUNT=1
-            else
-              export ALERT_COUNT=$((ALERT_COUNT+1))
-            fi
-            if [[ ${!ALERT_COUNT_CAMERA} -ge $ALERT_CAMERA_MAX_ALERTS ]] ; then
-              #shellcheck disable=SC2140
-              export "ALERT_COUNT_$cameraname"="1"
-            else
-              #shellcheck disable=SC2140,SC1102
-              export "ALERT_COUNT_$cameraname"="$((ALERT_COUNT_$cameraname + 1))"
-            fi
-
-            test "$DEBUG" == "1" && echo "ALERT!!"
-            export ALERT_LAST="$ALERT_NOW"
-            #shellcheck disable=SC2140
-            export "ALERT_LAST_$cameraname"="$ALERT_NOW"
-
-            MESSAGE="$cameraname $filetime"
-            for k in "${!COUNTER[@]}" ; do
-              MESSAGE="${MESSAGE} $k:${COUNTER[$k]}"
-            done
-
-            test "$ALERT_PUSHOVER" == "1" && alert_pushover "${MESSAGE}" "${image_out}" $PARALLEL
-            test "$ALERT_TELEGRAM" == "1" && alert_telegram "${MESSAGE}" "${image_out}" $PARALLEL
-            test "$ALERT_WHATSMATE" == "1" && alert_whatsmate "${MESSAGE}" "${image_out}" $PARALLEL
-            test "$ALERT_NEXMO" == "1" && alert_nexmo "${MESSAGE}" "${image_out}" $PARALLEL
-            test "$ALERT_TWILIO" == "1" && alert_twilio "${MESSAGE}" "${image_out}" $PARALLEL
-          else
-            test "$DEBUG" == "1" && echo "NOALERT_CAMERA"
-          fi
-        else
-          test "$DEBUG" == "1" && echo "NOALERT_ALL"
-        fi
-      fi
-
-      if [ "${BACKUP_ORIGINAL}" == "1" ] ; then
-        mv -f "$image_in" "${DIR_BACKUP}/${image_in/*\//}"
-      else
-        rm -f "$image_in"
-      fi
-      if [ "${SAVE_OUTPUT}" != "1" ] ; then
-        rm -f "$image_out"
-      fi
-
+    elif [[ "${result,,}" =~ '"predictions":[]' ]] ; then
+      echo "NO RESULTS: $result"
+      result=""
     else
-      echo "ERROR: $res"
+      if [ "$res" == 0 ] && [ "$result" != "" ] ; then
+        thiscount=0
+        while read "confidence" "label" "y_min" "x_min" "y_max" "x_max"; do
+          if [ ! -z "$confidence" ] ; then
+            confidence="${confidence:2:2}"
+          fi
+          test "$DEBUG" == "1" && echo "$thiscount | $confidence | $label | $y_min | $x_min | $y_max | $x_max"
+          MAIN_ARRAY[$thiscount]="${confidence},${label},${y_min},${x_min},${y_max},${x_max}"
+          thiscount=$((thiscount + 1))
+        done < <(echo "$result" | sed -e 's/[[:space:]]//g' | jq -r '.predictions[]|"\(.confidence) \(.label) \(.y_min) \(.x_min) \(.y_max) \(.x_max)"')
+
+        MAIN_ARRAY_COUNT=${#MAIN_ARRAY[@]}
+        test "$DEBUG" == "1" && echo "MAIN_ARRAY_COUNT : ${MAIN_ARRAY_COUNT}"
+
+        result_boxes=""
+
+        if [[ $MAIN_ARRAY_COUNT -gt 0 ]] ; then
+
+          test "$DEBUG" == "1" && echo "processing MAIN_ARRAY"
+          test "$DEBUG" == "1" && echo "MAIN_ARRAY: ${MAIN_ARRAY[*]}"
+
+          for ((i=0; i<$MAIN_ARRAY_COUNT; i++)) ; do
+            test "$DEBUG" == "1" && echo "processing SUB_ARRAY ${i}"
+
+            readarray -td, SUB_ARRAY <<<"${MAIN_ARRAY[i]}";
+
+            #assign
+            test "$BE_VERBOSE" == "1" && echo "confidence ${SUB_ARRAY[0]} | label ${SUB_ARRAY[1]} | y_min ${SUB_ARRAY[2]} | x_min ${SUB_ARRAY[3]} | y_max ${SUB_ARRAY[4]} | x_max ${SUB_ARRAY[5]}"
+
+            #shellcheck disable=SC2076
+            if [[ "${SUB_ARRAY[0]}" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
+
+              test "$DEBUG" == "1" && echo "${SUB_ARRAY[0]} -ge $DEEPSTACK_CONFIDENCE_LIMIT"
+
+              if [[ "$NOTIFY_LIST" =~ ",${SUB_ARRAY[1],,}," ]] || [[ ! "$IGNORE_LIST" =~ ",${SUB_ARRAY[1],,}," ]] ; then
+                color="$(echo "${SUB_ARRAY[1]}" | md5sum)"
+                color="${color:2:6}"
+
+                test "$DEBUG" == "1" && echo "NOTIFY_LIST or not IGNORE_LIST"
+
+                result_boxes="${result_boxes} -stroke \"#${color}\" -fill none -draw \"rectangle ${SUB_ARRAY[3]},${SUB_ARRAY[2]},${SUB_ARRAY[5]},${SUB_ARRAY[4]}\" -stroke none -fill \"#${color}\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[2]} '${SUB_ARRAY[1]}'\" -draw \"text ${SUB_ARRAY[3]},${SUB_ARRAY[4]} ' ${SUB_ARRAY[0]} %'\""
+
+                COUNTER["${SUB_ARRAY[1]}"]=$((${COUNTER["${SUB_ARRAY[1]}"]}+1))
+
+              else
+                test "$BE_VERBOSE" == "1" && echo "${SUB_ARRAY[1]} : not required or on ignore list"
+              fi
+            fi
+          done
+
+        fi
+
+        if [ "$result_boxes" != "" ] ; then
+
+          cameraname="${image_in/*\//}"
+          cameraname="${cameraname/${CAMERA_NAME_DELIMINATOR}*/}"
+          cameraname="${cameraname//[[:space:]]}" #remove spaces
+          ALERT_COUNT_CAMERA="ALERT_COUNT_$cameraname"
+          ALERT_LAST_CAMERA="ALERT_LAST_$cameraname"
+
+          # NOTIFY
+          test "$NOTIFY_URL" == "1" && notify_url "$cameraname" $PARALLEL
+          test "$NOTIFY_MQTT" == "1" && notify_mqtt "$cameraname" $PARALLEL
+          test "$NOTIFY_ZONEMINDER" == "1" && notify_zoneminder "$cameraname" $PARALLEL
+
+          filetime="$(stat -c %W "${image_in}")"
+          if [ "$filetime" != "0" ] && [ "$filetime" != "0" ] ; then
+            filetime="$(date -d "$filetime" 2> /dev/null)"
+          fi
+          filetime="$(date)"
+          filetime="${filetime//[[:space:]]/-}" #replace spaces with -
+
+          if [ "${DRAW_RESULTS,,}" == "yes" ] || [ "${DRAW_RESULTS,,}" == "true" ] || [ "${DRAW_RESULTS}" == "1" ] ; then
+            #shellcheck disable=SC2046
+            eval gm convert "${image_in}" -font "$FONT" -fill none -strokewidth 1 -pointsize 16 $(echo "$result_boxes") -gravity SouthWest -draw \"fill blue stroke none text +5,+5 '$WATERMARK'\" -gravity NorthWest -draw \"fill blue stroke none text +15,+15 '${filetime}'\" -quality 82 "${image_out}"
+          fi
+
+          ALERT_NOW="$(date +%s)"
+          ALERT_LAST_CAMERA_TIME=${!ALERT_LAST_CAMERA}
+          if [[ $((ALERT_LAST + ALERT_ALL_PERIOD_SECONDS)) -lt $ALERT_NOW ]] || [[ $ALERT_COUNT -lt $ALERT_ALL_MAX_ALERTS ]] ; then
+            if [[ $((ALERT_LAST_CAMERA_TIME + ALERT_ALL_PERIOD_SECONDS)) -lt $ALERT_NOW ]] || [[ ${!ALERT_COUNT_CAMERA} -lt $ALERT_CAMERA_MAX_ALERTS ]] ; then
+              if [[ ALERT_COUNT -ge $ALERT_ALL_MAX_ALERTS ]] ; then
+                export ALERT_COUNT=1
+              else
+                export ALERT_COUNT=$((ALERT_COUNT+1))
+              fi
+              if [[ ${!ALERT_COUNT_CAMERA} -ge $ALERT_CAMERA_MAX_ALERTS ]] ; then
+                #shellcheck disable=SC2140
+                export "ALERT_COUNT_$cameraname"="1"
+              else
+                #shellcheck disable=SC2140,SC1102
+                export "ALERT_COUNT_$cameraname"="$((ALERT_COUNT_$cameraname + 1))"
+              fi
+
+              test "$DEBUG" == "1" && echo "ALERT!!"
+              export ALERT_LAST="$ALERT_NOW"
+              #shellcheck disable=SC2140
+              export "ALERT_LAST_$cameraname"="$ALERT_NOW"
+
+              MESSAGE="$cameraname $filetime"
+              for k in "${!COUNTER[@]}" ; do
+                MESSAGE="${MESSAGE} $k:${COUNTER[$k]}"
+              done
+
+              test "$ALERT_PUSHOVER" == "1" && alert_pushover "${MESSAGE}" "${image_out}" $PARALLEL
+              test "$ALERT_TELEGRAM" == "1" && alert_telegram "${MESSAGE}" "${image_out}" $PARALLEL
+              test "$ALERT_WHATSMATE" == "1" && alert_whatsmate "${MESSAGE}" "${image_out}" $PARALLEL
+              test "$ALERT_NEXMO" == "1" && alert_nexmo "${MESSAGE}" "${image_out}" $PARALLEL
+              test "$ALERT_TWILIO" == "1" && alert_twilio "${MESSAGE}" "${image_out}" $PARALLEL
+            else
+              test "$DEBUG" == "1" && echo "NOALERT_CAMERA"
+            fi
+          else
+            test "$DEBUG" == "1" && echo "NOALERT_ALL"
+          fi
+        fi
+
+        if [ "${BACKUP_ORIGINAL}" == "1" ] ; then
+          mv -f "$image_in" "${DIR_BACKUP}/${image_in/*\//}"
+        else
+          rm -f "$image_in"
+        fi
+        if [ "${SAVE_OUTPUT}" != "1" ] ; then
+          rm -f "$image_out"
+        fi
+      else
+        echo "ERROR: $res"
+      fi
     fi
   else
     echo "ERROR: unable to read image: ${image_in}"
