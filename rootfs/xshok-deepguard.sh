@@ -50,7 +50,7 @@ ALERT_CAMERA_MAX_ALERTS="${ALERT_CAMERA_MAX_ALERTS:-2}"
 ALERT_CAMERA_PERIOD_SECONDS="${ALERT_CAMERA_PERIOD_SECONDS:-180}"
 
 DEEPSTACK_URL="${DEEPSTACK_URL:-http://deepstack:5000}"
-DEEPSTACK_BACKUP_URL="${DEEPSTACK_BACKUP_URL:-http://deepstackbackup:5000}"
+DEEPSTACK_BACKUP_URL="${DEEPSTACK_BACKUP_URL:-}"
 DEEPSTACK_CONFIDENCE_LIMIT="${DEEPSTACK_CONFIDENCE_LIMIT:-65}"
 
 #NOTIFY
@@ -224,15 +224,17 @@ function process_image { #image_in #image_out
 
   if [ -f "$image_in" ] ; then
     test "$BE_VERBOSE" == "1" && echo "Processing image: $image_in"
-    result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_URL}/v1/vision/detection")"
+    result="$(curl -k -X POST -F image=@"${image_in}" -F min_confidence="0.${DEEPSTACK_CONFIDENCE_LIMIT}" "${DEEPSTACK_URL}/v1/vision/detection")"
     res=$?
-    if [ "$res" != 0 ] ; then
+    if [ "$res" != 0 ] && [ "$DEEPSTACK_BACKUP_URL" != "" ] ; then
       test "$BE_VERBOSE" == "1" && echo "Retrying with deepstack backup"
-            result="$(curl -k -X POST -F image=@"${image_in}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
+            result="$(curl -k -X POST -F image=@"${image_in}" -F min_confidence="0.${DEEPSTACK_CONFIDENCE_LIMIT}" "${DEEPSTACK_BACKUP_URL}/v1/vision/detection")"
       res=$?
     fi
+
+    test "$DEBUG" == "1" && echo "RESULT: $result"
+
     if [ "$res" == 0 ] && [ "$result" != "" ] ; then
-      test "$DEBUG" == "1" && echo "$result"
       thiscount=0
       while read "confidence" "label" "y_min" "x_min" "y_max" "x_max"; do
         if [ ! -z "$confidence" ] ; then
@@ -259,7 +261,7 @@ function process_image { #image_in #image_out
           readarray -td, SUB_ARRAY <<<"${MAIN_ARRAY[i]}";
 
           #assign
-          test "$DEBUG" == "1" && echo "confidence ${SUB_ARRAY[0]} | label ${SUB_ARRAY[1]} | y_min ${SUB_ARRAY[2]} | x_min ${SUB_ARRAY[3]} | y_max ${SUB_ARRAY[4]} | x_max ${SUB_ARRAY[5]}"
+          test "$BE_VERBOSE" == "1" && echo "confidence ${SUB_ARRAY[0]} | label ${SUB_ARRAY[1]} | y_min ${SUB_ARRAY[2]} | x_min ${SUB_ARRAY[3]} | y_max ${SUB_ARRAY[4]} | x_max ${SUB_ARRAY[5]}"
 
           #shellcheck disable=SC2076
           if [[ "${SUB_ARRAY[0]}" -ge "$DEEPSTACK_CONFIDENCE_LIMIT" ]] ; then
@@ -513,6 +515,13 @@ if [ "${NOTIFY_URL,,}" == "yes" ] || [ "${NOTIFY_URL,,}" == "true" ] || [ "${NOT
   NOTIFY_URL="1"
 else
   NOTIFY_URL="0"
+fi
+
+DEEPSTACK_CONFIDENCE_LIMIT="${DEEPSTACK_CONFIDENCE_LIMIT/0./}"
+DEEPSTACK_CONFIDENCE_LIMIT="${DEEPSTACK_CONFIDENCE_LIMIT/1./}"
+if [[ $DEEPSTACK_CONFIDENCE_LIMIT -le 0 ]] || [[ $DEEPSTACK_CONFIDENCE_LIMIT -ge 100 ]] ; then
+  echo "DEEPSTACK_CONFIDENCE_LIMIT too high or too low, setting to 65"
+  DEEPSTACK_CONFIDENCE_LIMIT=65
 fi
 
 mkdir -p "$DIR_INPUT"
