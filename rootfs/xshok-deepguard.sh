@@ -233,6 +233,10 @@ function process_image { #image_in #image_out
     fi
 
     test "$DEBUG" == "1" && echo "RESULT: $result"
+    if [[ ! "${result,,}" =~ "error" ]] ; then
+      echo "ERROR: $result"
+      result=""
+    fi
 
     if [ "$res" == 0 ] && [ "$result" != "" ] ; then
       thiscount=0
